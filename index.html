@@ -113,7 +113,12 @@
                           }}
                           onContextMenu={(e)=>{ e.preventDefault(); valid && clearCell(col,row+1); }}
                           title={valid? `${FULL_MONTHS_ES[col]} ${row+1}` : ''}
-                          style={thumb?{backgroundImage:`url(${thumb})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}
+                          style={thumb ? {
+                            backgroundImage: `url(${thumb})`,
+                            backgroundSize: '100% 100%',
+                            backgroundPosition: 'center',
+                            backgroundRepeat: 'no-repeat'
+                          } : undefined}
                         />
                       );
                     })}
@@ -160,7 +165,7 @@
             ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(x,y); ctx.stroke(); last={x,y}; };
           const end=()=>{drawing=false; last=null;};
           const getXY=(e)=>{ const rect=canvas.getBoundingClientRect(); const cx=(e.touches?e.touches[0].clientX:e.clientX), cy=(e.touches?e.touches[0].clientY:e.clientY); return {x:cx-rect.left, y:cy-rect.top};};
-          const onDown=e=>{e.preventDefault(); const {x,y}=getXY(e); start(x,y);}; const onMove=e=>{if(!drawing)return; e.preventDefault(); const {x,y}=getXY(e); move(x,y);}; const onUp=e=>{e.preventDefault(); end();};
+          const onDown=e=>{e.preventDefault(); const {x,y}=getXY(e); start(x,y);}; const onMove=e=>{if(!drawing)return; e.preventDefault(); const {x,y}=getXY(e); move(x,y);}; const onUp = e => { end(); };
           canvas.addEventListener('mousedown',onDown); canvas.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
           canvas.addEventListener('touchstart',onDown,{passive:false}); canvas.addEventListener('touchmove',onMove,{passive:false}); window.addEventListener('touchend',onUp);
           return ()=>{ canvas.removeEventListener('mousedown',onDown); canvas.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp);
@@ -176,7 +181,7 @@
               <div className="h-1 w-10 bg-slate-600 rounded-full mx-auto mb-3"/>
               <div className="text-center font-semibold mb-2">{title}</div>
               <div className="flex items-center justify-center"><canvas ref={canvasRef} className="rounded-xl ring-1 ring-slate-700 touch-none"/></div>
-              <div className="mt-3 grid grid-cols-8 gap-2">{PALETTE.map(c=>(<button key={c} onClick={()=>{setColor(c); setErase(false);}} className={`h-8 rounded-lg ring-1 ring-slate-700 ${color===c&&!erase?'scale-95':''}`} style={{backgroundColor:c}}/>))}</div>
+              <div className="mt-3 grid grid-cols-8 gap-2">{PALETTE.map(c=>(<button key={c} onClick={()=>{setColor(c); setErase(false);}} onTouchStart={() => { setColor(c); setErase(false); }} className={`h-8 rounded-lg ring-1 ring-slate-700 ${color===c&&!erase?'scale-95':''}`} style={{backgroundColor:c}}/>))}</div>
               <div className="mt-3 flex items-center gap-3">
                 <label className="text-xs text-slate-300">Grosor</label>
                 <input type="range" min={2} max={40} value={size} onChange={e=>setSize(Number(e.target.value))} className="flex-1"/>
