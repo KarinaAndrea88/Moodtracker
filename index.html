@@ -106,7 +106,11 @@
                       return (
                         <div key={`${col}-${row}`}
                           className={`relative h-10 border-b border-slate-800 border-l border-slate-800 ${valid?'cursor-pointer':'opacity-30'}`}
-                          onClick={()=> valid && setOpen(true) && setTarget({y:year,m:col,d:row+1})}
+                          onClick={() => {
+                            if (!valid) return;
+                            setTarget({ y: year, m: col, d: row + 1 });
+                            setOpen(true);
+                          }}
                           onContextMenu={(e)=>{ e.preventDefault(); valid && clearCell(col,row+1); }}
                           title={valid? `${FULL_MONTHS_ES[col]} ${row+1}` : ''}
                           style={thumb?{backgroundImage:`url(${thumb})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}
