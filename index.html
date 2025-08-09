@@ -115,9 +115,10 @@
                           title={valid? `${FULL_MONTHS_ES[col]} ${row+1}` : ''}
                           style={thumb ? {
                             backgroundImage: `url(${thumb})`,
-                            backgroundSize: '100% 100%',
+                            backgroundSize: 'contain',
                             backgroundPosition: 'center',
-                            backgroundRepeat: 'no-repeat'
+                            backgroundRepeat: 'no-repeat',
+                            backgroundColor: '#0f172a'
                           } : undefined}
                         />
                       );
@@ -205,7 +206,30 @@
         await Promise.all(jobs); setThumbs({});
       }
       async function drawDataURL(ctx, dataURL, W, H){ return new Promise((res)=>{ const img=new Image(); img.onload=()=>{ ctx.drawImage(img,0,0,W,H); res(); }; img.src=dataURL; }); }
-      async function makeThumbFromCanvas(canvas, size=64){ const DPR=window.devicePixelRatio||1; const W=canvas.width/DPR, H=canvas.height/DPR; const s=document.createElement('canvas'); s.width=size; s.height=size; const c=s.getContext('2d'); c.fillStyle='#0f172a'; c.fillRect(0,0,size,size); c.drawImage(canvas,0,0,W,H,0,0,size,size); return s.toDataURL('image/webp',0.8); }
+      // Reemplaza tu makeThumbFromCanvas por esta variante
+      async function makeThumbFromCanvas(canvas, size = 64) {
+        const DPR = window.devicePixelRatio || 1;
+        const W = canvas.width / DPR, H = canvas.height / DPR;
+      
+        const s = document.createElement('canvas');
+        s.width = size; s.height = size;
+        const c = s.getContext('2d');
+      
+        // Fondo del thumb
+        c.fillStyle = '#0f172a';
+        c.fillRect(0, 0, size, size);
+      
+        // Escala manteniendo proporción
+        const scale = Math.min(size / W, size / H);
+        const drawW = Math.round(W * scale);
+        const drawH = Math.round(H * scale);
+        const x = Math.round((size - drawW) / 2);
+        const y = Math.round((size - drawH) / 2);
+      
+        c.drawImage(canvas, 0, 0, W, H, x, y, drawW, drawH);
+        return s.toDataURL('image/webp', 0.8);
+      }
+
       async function makeThumbFromDataURL(dataURL, size=64){ const img=new Image(); await new Promise(res=>{ img.onload=res; img.src=dataURL; }); const s=document.createElement('canvas'); s.width=size; s.height=size; const c=s.getContext('2d'); c.fillStyle='#0f172a'; c.fillRect(0,0,size,size); c.drawImage(img,0,0,img.width,img.height,0,0,size,size); return s.toDataURL('image/webp',0.8); }
 
       ReactDOM.createRoot(document.getElementById('root')).render(<MoodTrackerGrid/>);
