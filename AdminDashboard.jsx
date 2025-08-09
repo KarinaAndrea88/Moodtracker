@@ -288,11 +288,18 @@ export default function AdminDashboard({ onLogout }) {
   const [moodData, setMoodData] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedUser, setSelectedUser] = useState(null)
-  const [dateRange, setDateRange] = useState('week') // week, month, year
+  const [dateRange, setDateRange] = useState('year') // week, month, year
   const [colorStats, setColorStats] = useState({ colorStats: [], drawingAnalysis: [] })
   const [analyzing, setAnalyzing] = useState(false)
   const [showAnalysisPopup, setShowAnalysisPopup] = useState(false)
   const [currentAnalysis, setCurrentAnalysis] = useState(null)
+  const [showCreateUser, setShowCreateUser] = useState(false)
+  const [creatingUser, setCreatingUser] = useState(false)
+  const [newUserData, setNewUserData] = useState({
+    username: '',
+    password: '',
+    role: 'user'
+  })
 
   useEffect(() => {
     loadData()
@@ -368,6 +375,44 @@ export default function AdminDashboard({ onLogout }) {
       entry.user_id === selectedUser.id && 
       new Date(entry.date) >= startDate
     )
+  }
+
+  const createUser = async (userData) => {
+    try {
+      setCreatingUser(true)
+      
+      // Crear registro directamente en la tabla users
+      const { data: userRecord, error: userError } = await supabase
+        .from('users')
+        .insert({
+          username: userData.username,
+          password: userData.password,
+          role: userData.role
+        })
+        .select()
+        .single()
+      
+      if (userError) throw userError
+      
+      // Agregar el nuevo usuario a la lista local
+      setUsers(prev => [userRecord, ...prev])
+      
+      // Limpiar formulario
+      setNewUserData({
+        username: '',
+        password: '',
+        role: 'user'
+      })
+      
+      setShowCreateUser(false)
+      
+      return { success: true, user: userRecord }
+    } catch (error) {
+      console.error('Error creating user:', error)
+      return { success: false, error: error.message }
+    } finally {
+      setCreatingUser(false)
+    }
   }
 
   const getColorStats = async (data = moodData) => {
@@ -451,6 +496,12 @@ export default function AdminDashboard({ onLogout }) {
             <p className="text-slate-400">Gestiona usuarios y visualiza datos de mood</p>
           </div>
           <div className="flex gap-2">
+            <button
+              onClick={() => setShowCreateUser(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg"
+            >
+              ➕ Crear Usuario
+            </button>
             <button
               onClick={async () => {
                 setAnalyzing(true)
@@ -536,6 +587,93 @@ export default function AdminDashboard({ onLogout }) {
           )}
         </div>
 
+        {/* Create User Modal */}
+        {showCreateUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60" onClick={() => setShowCreateUser(false)} />
+            <div className="relative bg-slate-800 rounded-xl border border-slate-700 p-6 w-full max-w-md">
+              <h3 className="text-xl font-bold mb-4">Crear Nuevo Usuario</h3>
+              
+              <form onSubmit={async (e) => {
+                e.preventDefault()
+                const result = await createUser(newUserData)
+                if (!result.success) {
+                  alert(`Error: ${result.error}`)
+                }
+              }}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newUserData.username}
+                      onChange={(e) => setNewUserData(prev => ({ ...prev, username: e.target.value }))}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Nombre de usuario"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Contraseña
+                    </label>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={newUserData.password}
+                      onChange={(e) => setNewUserData(prev => ({ ...prev, password: e.target.value }))}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Mínimo 6 caracteres"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-2">
+                      Rol
+                    </label>
+                    <select
+                      value={newUserData.role}
+                      onChange={(e) => setNewUserData(prev => ({ ...prev, role: e.target.value }))}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="user">Usuario</option>
+                      <option value="admin">Administrador</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="flex gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateUser(false)}
+                    className="flex-1 px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded-lg transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingUser}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    {creatingUser ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Creando...
+                      </>
+                    ) : (
+                      'Crear Usuario'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div className="bg-slate-800 p-6 rounded-xl">
@@ -620,6 +758,8 @@ export default function AdminDashboard({ onLogout }) {
             </>
           )}
         </div>
+
+
 
         {/* All Entries Table */}
         <div className="bg-slate-800 p-6 rounded-xl">
